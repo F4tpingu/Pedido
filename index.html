@@ -25,16 +25,16 @@ canvas.height = window.innerHeight;
 
 // PLAYER
 let player = {x: canvas.width*0.25, y: canvas.height/2, r:25, vy:0};
-let gravity = 0.3;  
-let flap = -7;       
+let gravity = 0.2;  // mais lento para facilitar
+let flap = -5;       // menor para controle fácil
 let pipes = [];
 let pipeWidth = 50;
-let pipeGap = 180;   
+let pipeGap = [250, 280, 320]; // espaço vertical gigante por fase
 let score = 0;
 let totalPipes = [3, 4, 5]; 
 let phase = 0;
 let gameOver = false;
-const pipeSpacing = [300, 320, 340]; // aumento do espaço por fase
+const pipeSpacing = [400, 450, 500]; // espaço horizontal gigante
 
 window.addEventListener('pointerdown', ()=>{ if(!gameOver) player.vy = flap; });
 
@@ -52,7 +52,7 @@ function drawHeart(x,y,r){
 
 // SPAWN PIPES
 function spawnPipe(){
-  let top = Math.random()*(canvas.height-pipeGap-120)+60;
+  let top = Math.random()*(canvas.height-pipeGap[phase]-120)+60;
   pipes.push({x: canvas.width, top: top, passed:false});
 }
 
@@ -63,11 +63,11 @@ function update(){
   player.y += player.vy;
 
   if(pipes.length===0 || canvas.width - pipes[pipes.length-1].x > pipeSpacing[phase]) spawnPipe();
-  for(let p of pipes) p.x -= 2; 
+  for(let p of pipes) p.x -= 1.5; // mais lento ainda
 
   for(let p of pipes){
     if(player.x+player.r > p.x && player.x-player.r < p.x + pipeWidth){
-      if(player.y - player.r < p.top || player.y + player.r > p.top + pipeGap){
+      if(player.y - player.r < p.top || player.y + player.r > p.top + pipeGap[phase]){
         endGame();
       }
     }
@@ -95,7 +95,7 @@ function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   drawHeart(player.x, player.y, player.r);
   ctx.fillStyle = "#f48fb1";
-  for(let p of pipes){ ctx.fillRect(p.x,0,pipeWidth,p.top); ctx.fillRect(p.x,p.top+pipeGap,pipeWidth,canvas.height-(p.top+pipeGap)); }
+  for(let p of pipes){ ctx.fillRect(p.x,0,pipeWidth,p.top); ctx.fillRect(p.x,p.top+pipeGap[phase],pipeWidth,canvas.height-(p.top+pipeGap[phase])); }
 }
 
 // LOOP
