@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pedido de Namoro Interativo</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#fce4ec">
+<style>
+html, body {margin:0; padding:0; height:100%; overflow:hidden; background:#fce4ec; display:flex; justify-content:center; align-items:center;}
+canvas {background:#fce4ec; display:block;}
+#msg {position:absolute; top:30%; width:90%; text-align:center; font-size:1.5em; color:#d81b60; display:none;}
+#fase {position:absolute; top:10px; left:10px; font-size:1.5em; color:#d81b60;}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="fase">Fase: 1</div>
+<div id="msg">💖 Eai meu amor, eu sei que agente ja ta ficando a um bom tempo e cada vez agente ta se aproximando mais e se gostando mais, e como você ganhou o joguinho e conquistou o meu coração quer namora comigo? 💖</div>
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// PLAYER
+let player = {x: canvas.width*0.25, y: canvas.height/2, r:25, vy:0};
+let gravity = 0.3;  
+let flap = -7;       
+let pipes = [];
+let pipeWidth = 50;
+let pipeGap = 180;   
+let score = 0;
+let totalPipes = [3, 4, 5]; 
+let phase = 0;
+let gameOver = false;
+const pipeSpacing = [300, 320, 340]; // aumento do espaço por fase
+
+window.addEventListener('pointerdown', ()=>{ if(!gameOver) player.vy = flap; });
+
+// DESENHAR CORAÇÃO
+function drawHeart(x,y,r){
+  ctx.fillStyle="#d81b60";
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.bezierCurveTo(x, y - r/2, x - r, y - r/2, x - r, y + r/3);
+  ctx.bezierCurveTo(x - r, y + r, x, y + r*1.3, x, y + r*1.8);
+  ctx.bezierCurveTo(x, y + r*1.3, x + r, y + r, x + r, y + r/3);
+  ctx.bezierCurveTo(x + r, y - r/2, x, y - r/2, x, y);
+  ctx.fill();
+}
+
+// SPAWN PIPES
+function spawnPipe(){
+  let top = Math.random()*(canvas.height-pipeGap-120)+60;
+  pipes.push({x: canvas.width, top: top, passed:false});
+}
+
+// UPDATE
+function update(){
+  if(gameOver) return;
+  player.vy += gravity;
+  player.y += player.vy;
+
+  if(pipes.length===0 || canvas.width - pipes[pipes.length-1].x > pipeSpacing[phase]) spawnPipe();
+  for(let p of pipes) p.x -= 2; 
+
+  for(let p of pipes){
+    if(player.x+player.r > p.x && player.x-player.r < p.x + pipeWidth){
+      if(player.y - player.r < p.top || player.y + player.r > p.top + pipeGap){
+        endGame();
+      }
+    }
+    if(!p.passed && p.x + pipeWidth < player.x){
+      score++;
+      p.passed = true;
+      if(score >= totalPipes[phase]){
+        phase++;
+        if(phase >= totalPipes.length){
+          win();
+        } else {
+          alert(`Fase ${phase+1} concluída! Prepare-se para a próxima!`);
+          document.getElementById('fase').innerText = `Fase: ${phase+1}`;
+          resetPhase();
+        }
+      }
+    }
+  }
+
+  if(player.y + player.r > canvas.height || player.y - player.r < 0) endGame();
+}
+
+// DRAW
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawHeart(player.x, player.y, player.r);
+  ctx.fillStyle = "#f48fb1";
+  for(let p of pipes){ ctx.fillRect(p.x,0,pipeWidth,p.top); ctx.fillRect(p.x,p.top+pipeGap,pipeWidth,canvas.height-(p.top+pipeGap)); }
+}
+
+// LOOP
+function loop(){ update(); draw(); requestAnimationFrame(loop); }
+loop();
+
+function resetPhase(){ pipes=[]; player.y = canvas.height/2; player.vy=0; score=0; }
+function endGame(){ gameOver=true; alert("Ops! Você bateu! 😅"); resetPhase(); phase=0; document.getElementById('fase').innerText = "Fase: 1"; gameOver=false; }
+function win(){ gameOver=true; document.getElementById('msg').style.display='block'; }
+</script>
+<script>
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('service-worker.js'); }
+</script>
+</body>
+</html>
